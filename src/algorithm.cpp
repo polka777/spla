@@ -38,6 +38,7 @@
 #include <limits>
 #include <queue>
 #include <vector>
+#include <time.h>
 
 #define INF std::numeric_limits<float>::infinity()
 
@@ -460,6 +461,9 @@ Status mst(
     
     assert(S);
     assert(T);
+    
+    struct timespec step_start, step_end;
+    double step_time;
 
     const auto n = S->get_n_rows();
     int comp = n;
@@ -492,8 +496,13 @@ Status mst(
         iteration++;
         int edges_added_this_iteration = 0;
         // step 1, min edges for each vertices
+        clock_gettime(CLOCK_MONOTONIC, &step_start);
         spla::exec_mxv_masked(edge, mask, S, parent, spla::MUL_PAIR, spla::MIN_PAIR, spla::ALWAYS_PAIR, init_inf);
-#ifdef SPLA_DEBUG
+        clock_gettime(CLOCK_MONOTONIC, &step_end);
+        step_time = (step_end.tv_sec - step_start.tv_sec) + 
+                    (step_end.tv_nsec - step_start.tv_nsec) / 1e9;
+        std::cout << "---  Step 1 (min edges for each vertex, gpu): " << step_time * 1000 << " ms" << std::endl;
+        #ifdef SPLA_DEBUG
 
     std::cout << "edge = [";
     for (int32_t i = 0; i < n; i++) {
@@ -504,6 +513,8 @@ Status mst(
     std::cout << "]\n";
 #endif
     // step 2, min edges for each component
+        clock_gettime(CLOCK_MONOTONIC, &step_start);
+
         for (int32_t i = 0; i < n; i++) {
             cedge->set_pair(i, init_val);
         }
@@ -518,6 +529,11 @@ Status mst(
             auto min_for_comp = p1.weight <= p2.weight? p1 : p2; // min(cedge[parent[i]], edge[i])
             cedge->set_pair(p_i, min_for_comp);
         }
+        clock_gettime(CLOCK_MONOTONIC, &step_end);
+        step_time = (step_end.tv_sec - step_start.tv_sec) + 
+                    (step_end.tv_nsec - step_start.tv_nsec) / 1e9;
+        std::cout << "---  Step 2 (min edges for each component): " << step_time * 1000 << " ms" << std::endl;
+        
 #ifdef SPLA_DEBUG
     std::cout << "cedge = [";
     for (int32_t i = 0; i < n; i++) {
@@ -528,6 +544,7 @@ Status mst(
     std::cout << "]\n";
 #endif
         // step 3, когда нашли лучшее ребро компоненты распространяем его на все вершины
+        clock_gettime(CLOCK_MONOTONIC, &step_start);
         for (int32_t i = 0; i < n; i++) {
             spla::T_PAIR parent_v;
             spla::T_PAIR cedge_v;
@@ -535,7 +552,13 @@ Status mst(
             cedge->get_pair(parent_v.vertex, cedge_v);
             t_vec->set_pair(i, cedge_v); //t[i] = cedge[parent[i]]
         }
+        clock_gettime(CLOCK_MONOTONIC, &step_end);
+        step_time = (step_end.tv_sec - step_start.tv_sec) + 
+                    (step_end.tv_nsec - step_start.tv_nsec) / 1e9;
+        std::cout << "---  Step 3: " << step_time * 1000 << " ms" << std::endl;
+        
         //step 4 выбор представителя для каждой компоненты(когда лучшее ребро в edges совпадает с лучшим ребром компоненты t)
+        clock_gettime(CLOCK_MONOTONIC, &step_start);
         auto index = spla::Vector::make(n, spla::INT);
                 
         for (int32_t i = 0; i < n; i++) {
@@ -574,6 +597,11 @@ Status mst(
             temp->get_int(p_i, temp_v);
             index->set_int(i, temp_v);
         }
+        clock_gettime(CLOCK_MONOTONIC, &step_end);
+        step_time = (step_end.tv_sec - step_start.tv_sec) + 
+                    (step_end.tv_nsec - step_start.tv_nsec) / 1e9;
+        std::cout << "---  Step 4(выбор представителя для каждой компоненты): " << step_time * 1000 << " ms" << std::endl;
+        
 #ifdef SPLA_DEBUG
                 std::cout << "index = [";
                 for (int32_t i = 0; i < n; i++) {
@@ -584,6 +612,7 @@ Status mst(
                 std::cout << "]\n";
 #endif
         //step 5 добавляем найденные ребра в MST
+        clock_gettime(CLOCK_MONOTONIC, &step_start);
         auto new_parent = spla::Vector::make(n, spla::PAIR);
         for (int32_t i = 0; i < n; i++) {
             spla::T_PAIR p;
@@ -662,6 +691,10 @@ Status mst(
         for (uint i = 0; i < n; i++) {
             if (seen[i]) comp++;
         }
+        clock_gettime(CLOCK_MONOTONIC, &step_end);
+        step_time = (step_end.tv_sec - step_start.tv_sec) + 
+                    (step_end.tv_nsec - step_start.tv_nsec) / 1e9;
+        std::cout << "---  Step 5(добавляем найденные ребра в MST): " << step_time * 1000 << " ms" << std::endl;
         
 
 #ifdef SPLA_DEBUG
@@ -686,6 +719,7 @@ Status mst(
                     return Status::Ok; 
                 }
                 //обновляем матрицу смежности
+                clock_gettime(CLOCK_MONOTONIC, &step_start);
                 auto filtered_S = spla::Matrix::make(n, n, spla::PAIR);
                 for (int32_t i = 0; i < n; i++) {
                         for (int32_t j = 0; j < n; j++) {
@@ -706,6 +740,12 @@ Status mst(
                 if (edges_added_this_iteration == 0) {
                     return Status::Ok;  
                 }
+                clock_gettime(CLOCK_MONOTONIC, &step_end);
+                step_time = (step_end.tv_sec - step_start.tv_sec) + 
+                            (step_end.tv_nsec - step_start.tv_nsec) / 1e9;
+                std::cout << "---  Step 6(добавляем S): " << step_time * 1000 << " ms" << std::endl;
+                
+
                 
 
         }
