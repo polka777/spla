@@ -422,6 +422,8 @@ TEST(opencl_merge, merge_path_v1) {
     int         platform_index       = (spla_opencl_platform ? std::atoi(spla_opencl_platform) : 0);
 
     cl::Platform platform = platforms[platform_index];
+
+    cl::Platform platform = platforms[platform_index];
     std::cout << "Platforms: " << std::endl;
     for (auto& it : platforms) {
         std::cout << "- " << it.getInfo<CL_PLATFORM_NAME>() << std::endl;
@@ -520,7 +522,6 @@ TEST(opencl_merge, merge_path_v2) {
     if (platforms.empty()) {
         GTEST_SKIP() << "No platforms found";
     }
-
 
     const char* spla_opencl_platform = std::getenv(SPLA_OPENCL_PLATFORM);
     int         platform_index       = (spla_opencl_platform ? std::atoi(spla_opencl_platform) : 0);

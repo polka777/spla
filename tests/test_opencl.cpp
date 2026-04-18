@@ -47,7 +47,6 @@ TEST(opencl, basic) {
         GTEST_SKIP() << "No platforms found";
     }
 
-
     const char* spla_opencl_platform = std::getenv(SPLA_OPENCL_PLATFORM);
     int         platform_index       = (spla_opencl_platform ? std::atoi(spla_opencl_platform) : 0);
 
@@ -107,7 +106,6 @@ TEST(opencl, bitonic_sort_local) {
     if (platforms.empty()) {
         GTEST_SKIP() << "No platforms found";
     }
-
 
     const char* spla_opencl_platform = std::getenv(SPLA_OPENCL_PLATFORM);
     int         platform_index       = (spla_opencl_platform ? std::atoi(spla_opencl_platform) : 0);
@@ -171,7 +169,6 @@ TEST(opencl, bitonic_sort_global) {
     if (platforms.empty()) {
         GTEST_SKIP() << "No platforms found";
     }
-
 
     const char* spla_opencl_platform = std::getenv(SPLA_OPENCL_PLATFORM);
     int         platform_index       = (spla_opencl_platform ? std::atoi(spla_opencl_platform) : 0);
@@ -237,7 +234,6 @@ TEST(opencl, custom_value) {
         GTEST_SKIP() << "No platforms found";
     }
 
-
     const char* spla_opencl_platform = std::getenv(SPLA_OPENCL_PLATFORM);
     int         platform_index       = (spla_opencl_platform ? std::atoi(spla_opencl_platform) : 0);
 
@@ -298,7 +294,6 @@ TEST(opencl, reduce_by_key_small) {
     if (platforms.empty()) {
         GTEST_SKIP() << "No platforms found";
     }
-
 
     const char* spla_opencl_platform = std::getenv(SPLA_OPENCL_PLATFORM);
     int         platform_index       = (spla_opencl_platform ? std::atoi(spla_opencl_platform) : 0);
